@@ -1,0 +1,405 @@
+/* ============================================
+   全局样式 - 现代简洁教务管理系统风格
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* ============================================
+   顶部导航栏美化
+   ============================================ */
+.navbar.bg-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    height: 60px;
+    padding: 0 24px;
+}
+
+.navbar .d-flex.text-white {
+    align-items: center;
+    height: 100%;
+}
+
+.navbar-brand {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.navbar .btn-outline-light {
+    border-width: 1.5px;
+    font-weight: 500;
+}
+
+/* ============================================
+   左侧侧边栏美化
+   ============================================ */
+.sidebar {
+    background: #fff !important;
+    border-right: 1px solid #e8e8e8;
+}
+
+.sidebar .nav-link {
+    color: #666;
+    padding: 12px 20px;
+    margin: 4px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar .nav-link i {
+    font-size: 16px;
+    color: #999;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #f5f7fa;
+    color: #667eea;
+}
+
+.sidebar .nav-link:hover i {
+    color: #667eea;
+}
+
+.sidebar .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    font-weight: 500;
+}
+
+.sidebar .nav-link.active i {
+    color: white;
+}
+
+/* ============================================
+   主内容区域
+   ============================================ */
+main.col-md-10 {
+    background-color: #f5f7fa;
+    min-height: calc(100vh - 60px);
+}
+
+main h3 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+    position: relative;
+    padding-left: 16px;
+}
+
+main h3::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+/* ============================================
+   卡片样式美化
+   ============================================ */
+.card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+/* ============================================
+   Tab 导航美化
+   ============================================ */
+.nav-tabs {
+    border-bottom: 2px solid #e8e8e8;
+    margin-bottom: 24px;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #666;
+    font-weight: 500;
+    padding: 12px 24px;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #667eea;
+    background-color: #f5f7fa;
+}
+
+.nav-tabs .nav-link.active {
+    color: #667eea;
+    background-color: transparent;
+    font-weight: 600;
+}
+
+.nav-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ============================================
+   表单控件美化
+   ============================================ */
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control, .form-select {
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    background-color: #fff;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: #bbb;
+}
+
+/* ============================================
+   按钮样式美化
+   ============================================ */
+.btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-outline-secondary {
+    border: 1px solid #d9d9d9;
+    color: #666;
+    background: #fff;
+}
+
+.btn-outline-secondary:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background: #f5f7fa;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    color: white;
+}
+
+/* ============================================
+   表格样式美化
+   ============================================ */
+.table {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
+    color: #666;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 16px;
+    border-bottom: 2px solid #e8e8e8;
+    text-align: center;
+}
+
+.table tbody td {
+    padding: 14px 16px;
+    vertical-align: middle;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.table tbody tr:hover {
+    background-color: #f5f7fa;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: #fafbfc;
+}
+
+/* ============================================
+   状态文本美化
+   ============================================ */
+.text-success {
+    color: #52c41a !important;
+    font-weight: 500;
+}
+
+.text-danger {
+    color: #ff4d4f !important;
+    font-weight: 500;
+}
+
+.text-warning {
+    color: #faad14 !important;
+    font-weight: 500;
+}
+
+.text-muted {
+    color: #999 !important;
+}
+
+/* ============================================
+   数据更新高亮效果
+   ============================================ */
+.updated-row {
+    background-color: #fffbe6 !important;
+}
+
+.updated-row td {
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* ============================================
+   开关样式 (Toggle Switch)
+   ============================================ */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 26px;
+    transition: 0.3s;
+}
+
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #667eea;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(24px);
+}
+
+
+
+/* ============================================
+   空状态提示
+   ============================================ */
+.text-center.py-4.text-muted {
+    padding: 48px 24px !important;
+    font-size: 14px;
+    color: #999;
+}
+
+/* ============================================
+   滚动条美化
+   ============================================ */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f5f7fa;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d9d9d9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #bfbfbf;
+}
+
+/* ============================================
+   响应式优化
+   ============================================ */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 60px;
+        bottom: 0;
+        width: 240px;
+        z-index: 999;
+        transition: left 0.3s ease;
+    }
+    
+    main.col-md-10 {
+        margin-left: 0 !important;
+    }
+    
+    .card-body {
+        padding: 16px;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+}

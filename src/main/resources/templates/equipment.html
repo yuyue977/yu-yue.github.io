@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>设备基础信息 - 后台管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/common-style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">后台管理系统</a>
+        <div class="d-flex text-white">
+            <span class="me-3"><i class="bi bi-person"></i> <span th:text="${user.name}"></span> (<span th:text="${user.role}"></span>)</span>
+            <a class="btn btn-outline-light btn-sm me-2" href="/logout">退出</a>
+            <button class="btn btn-outline-light btn-sm" id="exitBtn" onclick="exitToUnity()"><i class="bi bi-box-arrow-left"></i> 退出到调度端</button>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-2 bg-light sidebar py-3" style="min-height: calc(100vh - 56px);">
+            <ul class="nav flex-column">
+                <li class="nav-item" th:if="${user.role == '管理员'}"><a class="nav-link" href="/users"><i class="bi bi-people"></i> 用户管理</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/equipment"><i class="bi bi-gear"></i> 设备基础信息</a></li>
+                <li class="nav-item"><a class="nav-link" href="/production"><i class="bi bi-graph-up"></i> 设备生产信息</a></li>
+            </ul>
+        </nav>
+        <main class="col-md-10 ms-sm-auto px-4 py-4">
+            <h3 class="mb-4">设备基础信息管理</h3>
+
+            <!-- Tab导航 -->
+            <ul class="nav nav-tabs mb-4" id="equipmentTabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="#loader-tab" data-bs-target="#loader-tab" th:classappend="${activeTab == 'loader-tab' or activeTab == null} ? 'active' : ''">装载机</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#silo-tab" data-bs-target="#silo-tab" th:classappend="${activeTab == 'silo-tab'} ? 'active' : ''">料仓</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#hopper-tab" data-bs-target="#hopper-tab" th:classappend="${activeTab == 'hopper-tab'} ? 'active' : ''">料斗</a>
+                </li>
+            </ul>
+
+            <!-- Tab内容 -->
+            <div class="tab-content">
+                <!-- 装载机Tab -->
+                <div class="tab-pane fade" th:classappend="${activeTab == 'loader-tab' or activeTab == null} ? 'show active' : ''" id="loader-tab">
+                    <!-- 搜索栏卡片 -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" action="/equipment">
+                                <input type="hidden" name="activeTab" value="loader-tab">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备编号</label>
+                                        <input type="text" name="loaderNumber" class="form-control" placeholder="请输入" th:value="${loaderNumber}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备型号</label>
+                                        <input type="text" name="loaderModel" class="form-control" placeholder="请输入" th:value="${loaderModel}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备状态</label>
+                                        <select name="loaderStatus" class="form-select" onchange="this.form.submit()">
+                                            <option value="">请选择</option>
+                                            <option value="作业中" th:selected="${loaderStatus == '作业中'}">作业中</option>
+                                            <option value="停止" th:selected="${loaderStatus == '停止'}">停止</option>
+                                            <option value="待机" th:selected="${loaderStatus == '待机'}">待机</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">搜索</button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="location.href='/equipment?activeTab=loader-tab'">重置</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 新增按钮和表格卡片 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3" th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLoaderModal"><i class="bi bi-plus-circle"></i> 新增设备</button>
+                            </div>
+
+                            <div th:if="${#lists.isEmpty(loaders)}" class="text-center py-4 text-muted">暂无符合条件的数据</div>
+                            <table class="table table-striped" th:unless="${#lists.isEmpty(loaders)}">
+                                <thead><tr><th>序号</th><th>设备编号</th><th>设备型号</th><th>电池容量(Kw/h)</th><th>斗容(m³)</th><th>设备状态</th><th th:if="${user.role == '管理员' or user.role == '调度主管'}">操作</th></tr></thead>
+                                <tbody>
+                                <tr th:each="l, iterStat : ${loaders}">
+                                    <td th:text="${iterStat.index + 1}"></td>
+                                    <td th:text="${l.loaderNumber}"></td>
+                                    <td th:text="${l.loaderModel}"></td>
+                                    <td th:text="${l.battery}"></td>
+                                    <td th:text="${l.loaderBucketCapacity}"></td>
+                                    <td>
+                                        <span th:if="${l.status == '作业中'}" class="text-success">作业中</span>
+                                        <span th:if="${l.status == '停止'}" class="text-danger">停止</span>
+                                        <span th:if="${l.status == '待机'}" class="text-warning">待机</span>
+                                    </td>
+                                    <td th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                        <button class="btn btn-sm btn-outline-primary edit-loader-btn"
+                                                data-bs-toggle="modal" data-bs-target="#editLoaderModal"
+                                                th:attr="data-id=${l.id}, data-index=${iterStat.index + 1}, data-loadernumber=${l.loaderNumber}, data-loadermodel=${l.loaderModel}, data-bucketcapacity=${l.loaderBucketCapacity}, data-battery=${l.battery}">
+                                            <i class="bi bi-pencil"></i> 编辑
+                                        </button>
+                                        <form th:action="@{'/loaders/delete/' + ${l.id}}" method="post" style="display:inline" onsubmit="return confirm('确定删除?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> 删除</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 料仓Tab -->
+                <div class="tab-pane fade" th:classappend="${activeTab == 'silo-tab'} ? 'show active' : ''" id="silo-tab">
+                    <!-- 搜索栏卡片 -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" action="/equipment">
+                                <input type="hidden" name="activeTab" value="silo-tab">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label class="form-label">料仓编号</label>
+                                        <input type="text" name="cangId" class="form-control" placeholder="请输入" th:value="${cangId}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">料仓状态</label>
+                                        <select name="siloStatus" class="form-select" onchange="this.form.submit()">
+                                            <option value="">请选择</option>
+                                            <option value="启用" th:selected="${siloStatus == '启用'}">启用</option>
+                                            <option value="停用" th:selected="${siloStatus == '停用'}">停用</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">搜索</button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="location.href='/equipment?activeTab=silo-tab'">重置</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 新增按钮和表格卡片 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3" th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSiloModal"><i class="bi bi-plus-circle"></i> 新增设备</button>
+                            </div>
+
+                            <div th:if="${#lists.isEmpty(silos)}" class="text-center py-4 text-muted">暂无符合条件的数据</div>
+                            <table class="table table-striped" th:unless="${#lists.isEmpty(silos)}">
+                                <thead><tr><th>序号</th><th>料仓编号</th><th>料仓容量(m³)</th><th>物料信息</th><th th:if="${user.role == '管理员' or user.role == '调度主管'}">使用状态</th><th th:if="${user.role == '管理员' or user.role == '调度主管'}">操作</th></tr></thead>
+                                <tbody>
+                                <tr th:each="s, iterStat : ${silos}">
+                                    <td th:text="${iterStat.index + 1}"></td>
+                                    <td th:text="${s.cangId}"></td>
+                                    <td th:text="${s.remain}"></td>
+                                    <td th:text="${s.materialInfo}"></td>
+                                    <td th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                        <form th:action="@{'/silos/toggle/' + ${s.id}}" method="post" style="display:inline">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" th:checked="${!s.isLocked}" onchange="this.form.submit()">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </form>
+                                    </td>
+                                    <td th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                        <button class="btn btn-sm btn-outline-primary edit-silo-btn"
+                                                data-bs-toggle="modal" data-bs-target="#editSiloModal"
+                                                th:attr="data-id=${s.id}, data-index=${iterStat.index + 1}, data-cangid=${s.cangId}, data-materialinfo=${s.materialInfo}, data-remain=${s.remain}">
+                                            <i class="bi bi-pencil"></i> 编辑
+                                        </button>
+                                        <form th:action="@{'/silos/delete/' + ${s.id}}" method="post" style="display:inline" onsubmit="return confirm('确定删除?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> 删除</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 料斗Tab -->
+                <div class="tab-pane fade" th:classappend="${activeTab == 'hopper-tab'} ? 'show active' : ''" id="hopper-tab">
+                    <!-- 搜索栏卡片 -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" action="/equipment">
+                                <input type="hidden" name="activeTab" value="hopper-tab">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label class="form-label">料斗编号</label>
+                                        <input type="text" name="douId" class="form-control" placeholder="请输入" th:value="${douId}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">料斗状态</label>
+                                        <select name="hopperStatus" class="form-select" onchange="this.form.submit()">
+                                            <option value="">请选择</option>
+                                            <option value="启用" th:selected="${hopperStatus == '启用'}">启用</option>
+                                            <option value="停用" th:selected="${hopperStatus == '停用'}">停用</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">搜索</button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="location.href='/equipment?activeTab=hopper-tab'">重置</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 新增按钮和表格卡片 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3" th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addHopperModal"><i class="bi bi-plus-circle"></i> 新增设备</button>
+                            </div>
+
+                            <div th:if="${#lists.isEmpty(hoppers)}" class="text-center py-4 text-muted">暂无符合条件的数据</div>
+                            <table class="table table-striped" th:unless="${#lists.isEmpty(hoppers)}">
+                                <thead><tr><th>序号</th><th>料斗编号</th><th>料斗容量(m³)</th><th>物料信息</th><th th:if="${user.role == '管理员' or user.role == '调度主管'}">使用状态</th><th th:if="${user.role == '管理员' or user.role == '调度主管'}">操作</th></tr></thead>
+                                <tbody>
+                                <tr th:each="h, iterStat : ${hoppers}">
+                                    <td th:text="${iterStat.index + 1}"></td>
+                                    <td th:text="${h.douId}"></td>
+                                    <td th:text="${h.remain}"></td>
+                                    <td th:text="${h.materialInfo}"></td>
+                                    <td th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                        <form th:action="@{'/hoppers/toggle-status/' + ${h.id}}" method="post" style="display:inline">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" th:checked="${h.douStatus}" onchange="this.form.submit()">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </form>
+                                    </td>
+                                    <td th:if="${user.role == '管理员' or user.role == '调度主管'}">
+                                        <button class="btn btn-sm btn-outline-primary edit-hopper-btn"
+                                                data-bs-toggle="modal" data-bs-target="#editHopperModal"
+                                                th:attr="data-id=${h.id}, data-index=${iterStat.index + 1}, data-douid=${h.douId}, data-materialinfo=${h.materialInfo}, data-remain=${h.remain}">
+                                            <i class="bi bi-pencil"></i> 编辑
+                                        </button>
+                                        <form th:action="@{'/hoppers/delete/' + ${h.id}}" method="post" style="display:inline" onsubmit="return confirm('确定删除?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> 删除</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- 料仓编辑模态框 -->
+<div class="modal fade" id="editSiloModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑料仓</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editSiloForm" method="post">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">序号</label><input type="text" id="editSiloIndex" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">料仓编号</label><input type="text" name="cangId" id="editSiloCangId" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">料仓容量</label><input type="number" step="0.1" name="remain" id="editSiloRemain" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">物料信息</label><input type="text" name="materialInfo" id="editSiloMaterialInfo" class="form-control" required></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 料斗编辑模态框 -->
+<div class="modal fade" id="editHopperModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑料斗</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editHopperForm" method="post">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">序号</label><input type="text" id="editHopperIndex" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">料斗编号</label><input type="text" name="douId" id="editHopperDouId" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">料斗容量</label><input type="number" step="0.1" name="remain" id="editHopperRemain" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">物料信息</label><input type="text" name="materialInfo" id="editHopperMaterialInfo" class="form-control" required></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 装载机编辑模态框 -->
+<div class="modal fade" id="editLoaderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑装载机</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editLoaderForm" method="post">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">序号</label><input type="text" id="editLoaderIndex" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">设备编号</label><input type="text" name="loaderNumber" id="editLoaderNumber" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">设备型号</label><input type="text" name="loaderModel" id="editLoaderModel" class="form-control" disabled></div>
+                    <div class="mb-3"><label class="form-label">电池容量(Kw/h)</label><input type="number" name="battery" id="editLoaderBattery" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">斗容(m³)</label><input type="number" step="0.1" name="loaderBucketCapacity" id="editLoaderBucketCapacity" class="form-control"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 装载机新增模态框 -->
+<div class="modal fade" id="addLoaderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增装载机</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/loaders/add" method="post">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">设备编号</label><input type="text" name="loaderNumber" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label">设备型号</label><input type="text" name="loaderModel" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label">电池容量(Kw/h)</label><input type="number" name="battery" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">斗容(m³)</label><input type="number" step="0.1" name="loaderBucketCapacity" class="form-control"></div>
+                    <input type="hidden" name="deviceId" value="default">
+                    <input type="hidden" name="status" value="待机">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 料仓新增模态框 -->
+<div class="modal fade" id="addSiloModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增料仓</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/silos/add" method="post">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">料仓编号</label><input type="text" name="cangId" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label">料仓容量(m³)</label><input type="number" step="0.1" name="remain" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">物料信息</label><input type="text" name="materialInfo" class="form-control" required></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 料斗新增模态框 -->
+<div class="modal fade" id="addHopperModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增料斗</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/hoppers/add" method="post">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">料斗编号</label><input type="number" name="douId" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label">料斗容量(m³)</label><input type="number" step="0.1" name="remain" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">物料信息</label><input type="text" name="materialInfo" class="form-control" required></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 料仓编辑
+document.querySelectorAll('.edit-silo-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('editSiloForm').action = '/silos/update/' + this.dataset.id;
+        document.getElementById('editSiloIndex').value = this.dataset.index;
+        document.getElementById('editSiloCangId').value = this.dataset.cangid;
+        document.getElementById('editSiloMaterialInfo').value = this.dataset.materialinfo;
+        document.getElementById('editSiloRemain').value = this.dataset.remain;
+    });
+});
+
+// 料斗编辑
+document.querySelectorAll('.edit-hopper-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('editHopperForm').action = '/hoppers/update/' + this.dataset.id;
+        document.getElementById('editHopperIndex').value = this.dataset.index;
+        document.getElementById('editHopperDouId').value = this.dataset.douid;
+        document.getElementById('editHopperMaterialInfo').value = this.dataset.materialinfo;
+        document.getElementById('editHopperRemain').value = this.dataset.remain;
+    });
+});
+
+// 装载机编辑
+document.querySelectorAll('.edit-loader-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('editLoaderForm').action = '/loaders/update/' + this.dataset.id;
+        document.getElementById('editLoaderIndex').value = this.dataset.index;
+        document.getElementById('editLoaderNumber').value = this.dataset.loadernumber;
+        document.getElementById('editLoaderModel').value = this.dataset.loadermodel;
+        document.getElementById('editLoaderBucketCapacity').value = this.dataset.bucketcapacity;
+        document.getElementById('editLoaderBattery').value = this.dataset.battery;
+    });
+});
+</script>
+<script>
+// WebSocket 客户端 - 实时接收仓/斗数据更新
+(function() {
+    var wsUrl = 'ws://' + window.location.host + '/ws/data';
+    var ws;
+    function connect() {
+        ws = new WebSocket(wsUrl);
+        ws.onmessage = function(event) {
+            try {
+                var data = JSON.parse(event.data);
+                updateSiloTable(data.silos);
+                updateHopperTable(data.hoppers);
+            } catch(e) {
+                console.error('WebSocket 数据解析失败:', e);
+            }
+        };
+        ws.onclose = function() {
+            setTimeout(connect, 3000);
+        };
+        ws.onerror = function(err) {
+            console.error('WebSocket 错误:', err);
+        };
+    }
+    function updateSiloTable(silos) {
+        if (!silos) return;
+        var siloTab = document.querySelector('#silo-tab table tbody');
+        if (!siloTab) return;
+        var rows = siloTab.querySelectorAll('tr');
+        silos.forEach(function(s) {
+            var row = rows[s.id - 1];
+            if (row) {
+                var cells = row.querySelectorAll('td');
+                if (cells[2]) cells[2].textContent = s.remain != null ? s.remain : '-';
+            }
+        });
+    }
+    function updateHopperTable(hoppers) {
+        if (!hoppers) return;
+        var hopperTab = document.querySelector('#hopper-tab table tbody');
+        if (!hopperTab) return;
+        var rows = hopperTab.querySelectorAll('tr');
+        hoppers.forEach(function(h) {
+            var row = rows[h.id - 1];
+            if (row) {
+                var cells = row.querySelectorAll('td');
+                if (cells[2]) cells[2].textContent = h.remain != null ? h.remain : '-';
+            }
+        });
+    }
+    connect();
+})();
+</script>
+<script>
+// Unity 退出功能
+var fromPage = (function() {
+    var params = new URLSearchParams(window.location.search);
+    var from = params.get('from');
+    if (from === 'video' || from === 'dispatch') return from;
+    return 'dispatch';
+})();
+
+function exitToUnity() {
+    if (window.vuplex) {
+        var message = fromPage === 'video' ? 'navigateToVideo' : 'navigateToDispatch';
+        window.vuplex.postMessage(message);
+        console.log('[WebView] 已发送退出消息:', message);
+    } else {
+        notify('当前不在 Unity 环境中，请手动关闭此页面', 'warn');
+        console.warn('[WebView] Unity bridge not available');
+    }
+}
+</script>
+<div id="notifyBox" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:6px;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;" onclick="this.style.display='none'"></div>
+<script>
+function notify(msg, type) {
+    var box = document.getElementById('notifyBox');
+    box.textContent = msg;
+    box.style.display = 'block';
+    box.style.background = type === 'error' ? '#f8d7da' : type === 'warn' ? '#fff3cd' : '#d1e7dd';
+    box.style.color = type === 'error' ? '#842029' : type === 'warn' ? '#664d03' : '#0f5132';
+    clearTimeout(box._t);
+    box._t = setTimeout(function() { box.style.display = 'none'; }, 3000);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+var _searchTimer = null;
+function debounceSearch(el) {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(function() { el.form.submit(); }, 300);
+}
+
+// Tab切换和页面加载时激活正确的Tab
+(function() {
+    var tabLinks = document.querySelectorAll('#equipmentTabs .nav-link');
+    var tabPanes = document.querySelectorAll('.tab-content .tab-pane');
+
+    function activateTab(targetId) {
+        tabLinks.forEach(function(link) {
+            link.classList.remove('active');
+        });
+        tabPanes.forEach(function(pane) {
+            pane.classList.remove('show', 'active');
+        });
+        var activeLink = document.querySelector('#equipmentTabs a[href="#' + targetId + '"]');
+        var activePane = document.getElementById(targetId);
+        if (activeLink) activeLink.classList.add('active');
+        if (activePane) activePane.classList.add('show', 'active');
+    }
+
+    // 点击切换Tab
+    tabLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var target = this.getAttribute('href').substring(1);
+            activateTab(target);
+            // 更新URL中的activeTab参数
+            var url = new URL(window.location);
+            url.searchParams.set('activeTab', target);
+            window.history.replaceState(null, '', url);
+        });
+    });
+
+    // 页面加载时根据URL参数激活正确的Tab
+    var params = new URLSearchParams(window.location.search);
+    var activeTab = params.get('activeTab') || 'loader-tab';
+    activateTab(activeTab);
+})();
+</script>
+</body>
+</html>

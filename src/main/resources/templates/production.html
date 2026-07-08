@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>设备生产信息 - 后台管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/common-style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">后台管理系统</a>
+        <div class="d-flex text-white">
+            <span class="me-3"><i class="bi bi-person"></i> <span th:text="${user.name}"></span> (<span th:text="${user.role}"></span>)</span>
+            <a class="btn btn-outline-light btn-sm me-2" href="/logout">退出</a>
+            <button class="btn btn-outline-light btn-sm" id="exitBtn" onclick="exitToUnity()"><i class="bi bi-box-arrow-left"></i> 退出到调度端</button>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-2 bg-light sidebar py-3" style="min-height: calc(100vh - 56px);">
+            <ul class="nav flex-column">
+                <li class="nav-item" th:if="${user.role == '管理员'}"><a class="nav-link" href="/users"><i class="bi bi-people"></i> 用户管理</a></li>
+                <li class="nav-item" th:if="${user.role == '管理员' or user.role == '调度主管'}"><a class="nav-link" href="/equipment"><i class="bi bi-gear"></i> 设备基础信息</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/production"><i class="bi bi-graph-up"></i> 设备生产信息</a></li>
+            </ul>
+        </nav>
+        <main class="col-md-10 ms-sm-auto px-4 py-4">
+            <h3 class="mb-4">设备生产信息管理</h3>
+
+            <!-- Tab导航 -->
+            <ul class="nav nav-tabs mb-4" id="productionTabs">
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#loader-tab" th:classappend="${activeTab == 'loader-tab' or activeTab == null} ? 'active' : ''">装载机</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#silo-tab" th:classappend="${activeTab == 'silo-tab'} ? 'active' : ''">料仓</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#hopper-tab" th:classappend="${activeTab == 'hopper-tab'} ? 'active' : ''">料斗</a>
+                </li>
+            </ul>
+
+            <!-- Tab内容 -->
+            <div class="tab-content">
+                <!-- 装载机Tab -->
+                <div class="tab-pane fade" th:classappend="${activeTab == 'loader-tab' or activeTab == null} ? 'show active' : ''" id="loader-tab">
+                    <!-- 搜索栏卡片 -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" action="/production">
+                                <input type="hidden" name="activeTab" value="loader-tab">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备编号</label>
+                                        <input type="text" name="loaderNumber" class="form-control" placeholder="请输入" th:value="${loaderNumber}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备型号</label>
+                                        <input type="text" name="loaderModel" class="form-control" placeholder="请输入" th:value="${loaderModel}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备状态</label>
+                                        <select name="loaderProdStatus" class="form-select" onchange="this.form.submit()">
+                                            <option value="">请选择</option>
+                                            <option value="作业中" th:selected="${loaderProdStatus == '作业中'}">作业中</option>
+                                            <option value="停止" th:selected="${loaderProdStatus == '停止'}">停止</option>
+                                            <option value="待机" th:selected="${loaderProdStatus == '待机'}">待机</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">搜索</button>
+                                        <button type="button" class="btn btn-outline-secondary me-2" onclick="location.href='/production?activeTab=loader-tab'">重置</button>
+                                        <a href="/export-loader-select" class="btn btn-success" th:if="${user.role == '管理员' or user.role == '调度主管'}"><i class="bi bi-download"></i> 导出</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div th:if="${#lists.isEmpty(loaders)}" class="text-center py-4 text-muted">暂无符合条件的数据</div>
+                            <table class="table table-striped" th:unless="${#lists.isEmpty(loaders)}">
+                                <thead><tr><th>序号</th><th>设备编号</th><th>设备型号</th><th>斗容(m³)</th><th>设备状态</th></tr></thead>
+                                <tbody>
+                                <tr th:each="l, iterStat : ${loaders}">
+                                    <td th:text="${iterStat.index + 1}"></td>
+                                    <td th:text="${l.loaderNumber}"></td>
+                                    <td th:text="${l.loaderModel}"></td>
+                                    <td th:text="${l.loaderBucketCapacity}"></td>
+                                    <td>
+                                        <span th:if="${l.status == '作业中'}" class="text-success">作业中</span>
+                                        <span th:if="${l.status == '停止'}" class="text-danger">停止</span>
+                                        <span th:if="${l.status == '待机'}" class="text-warning">待机</span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 料仓Tab -->
+                <div class="tab-pane fade" th:classappend="${activeTab == 'silo-tab'} ? 'show active' : ''" id="silo-tab">
+                    <!-- 搜索栏卡片 -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" action="/production">
+                                <input type="hidden" name="activeTab" value="silo-tab">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">料仓编号</label>
+                                        <input type="text" name="cangId" class="form-control" placeholder="请输入" th:value="${cangId}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">料仓状态</label>
+                                        <select name="siloProdStatus" class="form-select" onchange="this.form.submit()">
+                                            <option value="">请选择</option>
+                                            <option value="启用" th:selected="${siloProdStatus == '启用'}">启用</option>
+                                            <option value="停用" th:selected="${siloProdStatus == '停用'}">停用</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">搜索</button>
+                                        <button type="button" class="btn btn-outline-secondary me-2" onclick="location.href='/production?activeTab=silo-tab'">重置</button>
+                                        <a href="/export-silo-select" class="btn btn-success" th:if="${user.role == '管理员' or user.role == '调度主管'}"><i class="bi bi-download"></i> 导出</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div th:if="${#lists.isEmpty(silos)}" class="text-center py-4 text-muted">暂无符合条件的数据</div>
+                            <table class="table table-striped" th:unless="${#lists.isEmpty(silos)}">
+                                <thead><tr><th>序号</th><th>料仓编号</th><th>物料信息</th><th>料仓容量(m³)</th><th>料仓余量(%)</th><th>料仓状态</th></tr></thead>
+                                <tbody>
+                                <tr th:each="s, iterStat : ${silos}" th:attr="data-cang-id=${s.cangId}">
+                                    <td th:text="${iterStat.index + 1}"></td>
+                                    <td th:text="${s.cangId}"></td>
+                                    <td th:text="${s.materialInfo}" data-field="materialInfo"></td>
+                                    <td th:text="${s.cangCapacity != null ? s.cangCapacity : '-'}"></td>
+                                    <td th:text="${s.cangCapacity != null && s.cangCapacity > 0 && s.remain != null ? #numbers.formatDecimal(s.remain / s.cangCapacity * 100, 1, 1) + '%' : '-'}" data-field="remain"></td>
+                                    <td data-field="cangStatus">
+                                        <span th:if="${s.cangStatus}" class="text-success">启用</span>
+                                        <span th:unless="${s.cangStatus}" class="text-danger">未启用</span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 料斗Tab -->
+                <div class="tab-pane fade" th:classappend="${activeTab == 'hopper-tab'} ? 'show active' : ''" id="hopper-tab">
+                    <!-- 搜索栏卡片 -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" action="/production">
+                                <input type="hidden" name="activeTab" value="hopper-tab">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">料斗编号</label>
+                                        <input type="text" name="douId" class="form-control" placeholder="请输入" th:value="${douId}" oninput="debounceSearch(this)">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">料斗状态</label>
+                                        <select name="hopperProdStatus" class="form-select" onchange="this.form.submit()">
+                                            <option value="">请选择</option>
+                                            <option value="启用" th:selected="${hopperProdStatus == '启用'}">启用</option>
+                                            <option value="停用" th:selected="${hopperProdStatus == '停用'}">停用</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">搜索</button>
+                                        <button type="button" class="btn btn-outline-secondary me-2" onclick="location.href='/production?activeTab=hopper-tab'">重置</button>
+                                        <a href="/export-hopper-select" class="btn btn-success" th:if="${user.role == '管理员' or user.role == '调度主管'}"><i class="bi bi-download"></i> 导出</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div th:if="${#lists.isEmpty(hoppers)}" class="text-center py-4 text-muted">暂无符合条件的数据</div>
+                            <table class="table table-striped" th:unless="${#lists.isEmpty(hoppers)}">
+                                <thead><tr><th>序号</th><th>料斗编号</th><th>物料信息</th><th>料斗容量(m³)</th><th>料斗余量(%)</th><th>料斗状态</th></tr></thead>
+                                <tbody>
+                                <tr th:each="h, iterStat : ${hoppers}" th:attr="data-dou-id=${h.douId}">
+                                    <td th:text="${iterStat.index + 1}"></td>
+                                    <td th:text="${h.douId}"></td>
+                                    <td th:text="${h.materialInfo}" data-field="materialInfo"></td>
+                                    <td th:text="${h.douCapacity != null ? h.douCapacity : '-'}"></td>
+                                    <td th:text="${h.douCapacity != null && h.douCapacity > 0 && h.remain != null ? #numbers.formatDecimal(h.remain / h.douCapacity * 100, 1, 1) + '%' : '-'}" data-field="remain"></td>
+                                    <td data-field="douStatus">
+                                        <span th:if="${h.douStatus}" class="text-success">启用</span>
+                                        <span th:unless="${h.douStatus}" class="text-danger">未启用</span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script>
+var _searchTimer = null;
+function debounceSearch(el) {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(function() { el.form.submit(); }, 300);
+}
+
+// WebSocket 连接管理
+var websocket = null;
+var reconnectAttempts = 0;
+var maxReconnectAttempts = 5;
+var reconnectDelay = 3000;
+
+function connectWebSocket() {
+    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var wsUrl = protocol + '//' + window.location.host + '/ws/data';
+    console.log('[WebSocket] 尝试连接:', wsUrl);
+    websocket = new WebSocket(wsUrl);
+    websocket.onopen = function(event) {
+        console.log('[WebSocket] 连接成功');
+        reconnectAttempts = 0;
+        requestLatestData();
+    };
+    websocket.onmessage = function(event) {
+        console.log('[WebSocket] 收到数据:', event.data);
+        try {
+            var data = JSON.parse(event.data);
+            updateTableData(data);
+        } catch (e) {
+            console.error('[WebSocket] 数据解析失败:', e);
+        }
+    };
+    websocket.onerror = function(error) {
+        console.error('[WebSocket] 错误:', error);
+    };
+    websocket.onclose = function(event) {
+        console.log('[WebSocket] 连接关闭, code:', event.code);
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            console.log('[WebSocket] ' + (reconnectDelay/1000) + '秒后尝试第' + reconnectAttempts + '次重连...');
+            setTimeout(connectWebSocket, reconnectDelay);
+        } else {
+            console.warn('[WebSocket] 达到最大重连次数，停止重连');
+        }
+    };
+}
+
+function requestLatestData() {
+    fetch('/api/production/latest')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            console.log('[API] 获取最新数据:', data);
+            updateTableData(data);
+        })
+        .catch(function(error) {
+            console.error('[API] 获取数据失败:', error);
+        });
+}
+
+function updateTableData(data) {
+    if (data.silos && Array.isArray(data.silos)) {
+        updateSiloTable(data.silos);
+    }
+    if (data.hoppers && Array.isArray(data.hoppers)) {
+        updateHopperTable(data.hoppers);
+    }
+}
+
+function updateSiloTable(silos) {
+    silos.forEach(function(silo) {
+        var row = document.querySelector('tr[data-cang-id="' + silo.cangId + '"]');
+        if (row) {
+            var materialCell = row.querySelector('td[data-field="materialInfo"]');
+            if (materialCell && silo.materialInfo) {
+                materialCell.textContent = silo.materialInfo;
+            }
+            var remainCell = row.querySelector('td[data-field="remain"]');
+            if (remainCell && silo.cangCapacity > 0 && silo.remain != null) {
+                var percent = (silo.remain / silo.cangCapacity * 100).toFixed(1) + '%';
+                remainCell.textContent = percent;
+            }
+            var statusCell = row.querySelector('td[data-field="cangStatus"]');
+            if (statusCell) {
+                statusCell.innerHTML = silo.cangStatus
+                    ? '<span class="text-success">启用</span>'
+                    : '<span class="text-danger">未启用</span>';
+            }
+            row.classList.add('updated-row');
+            setTimeout(function() { row.classList.remove('updated-row'); }, 1000);
+        }
+    });
+}
+
+function updateHopperTable(hoppers) {
+    hoppers.forEach(function(hopper) {
+        var row = document.querySelector('tr[data-dou-id="' + hopper.douId + '"]');
+        if (row) {
+            var materialCell = row.querySelector('td[data-field="materialInfo"]');
+            if (materialCell && hopper.materialInfo) {
+                materialCell.textContent = hopper.materialInfo;
+            }
+            var remainCell = row.querySelector('td[data-field="remain"]');
+            if (remainCell && hopper.douCapacity > 0 && hopper.remain != null) {
+                var percent = (hopper.remain / hopper.douCapacity * 100).toFixed(1) + '%';
+                remainCell.textContent = percent;
+            }
+            var statusCell = row.querySelector('td[data-field="douStatus"]');
+            if (statusCell) {
+                statusCell.innerHTML = hopper.douStatus
+                    ? '<span class="text-success">启用</span>'
+                    : '<span class="text-danger">未启用</span>';
+            }
+            row.classList.add('updated-row');
+            setTimeout(function() { row.classList.remove('updated-row'); }, 1000);
+        }
+    });
+}
+
+function exitToUnity() {
+    var fromPage = (function() {
+        var params = new URLSearchParams(window.location.search);
+        var from = params.get('from');
+        if (from === 'video' || from === 'dispatch') return from;
+        return 'dispatch';
+    })();
+    
+    if (window.vuplex) {
+        var message = fromPage === 'video' ? 'navigateToVideo' : 'navigateToDispatch';
+        window.vuplex.postMessage(message);
+        console.log('[WebView] 已发送退出消息:', message);
+    } else {
+        notify('当前不在 Unity 环境中，请手动关闭此页面', 'warn');
+        console.warn('[WebView] Unity bridge not available');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(connectWebSocket, 500);
+});
+
+// 页面可见时强制刷新数据（从 Unity 返回时触发）
+window.addEventListener('pageshow', function(event) {
+    console.log('[Page] 页面显示，强制刷新数据');
+    requestLatestData();
+});
+
+// 页面从缓存恢复时刷新
+window.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        console.log('[Page] 页面可见，刷新数据');
+        requestLatestData();
+    }
+});
+</script>
+<div id="notifyBox" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:6px;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;" onclick="this.style.display='none'"></div>
+<script>
+function notify(msg, type) {
+    var box = document.getElementById('notifyBox');
+    box.textContent = msg;
+    box.style.display = 'block';
+    box.style.background = type === 'error' ? '#f8d7da' : type === 'warn' ? '#fff3cd' : '#d1e7dd';
+    box.style.color = type === 'error' ? '#842029' : type === 'warn' ? '#664d03' : '#0f5132';
+    clearTimeout(box._t);
+    box._t = setTimeout(function() { box.style.display = 'none'; }, 3000);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
